@@ -154,12 +154,58 @@
         document.getElementById('vibeInput').addEventListener('input', function(e) {
             aiPrompt = e.target.value;
         });
+        async function update() {
+    const prompt = document.getElementById('vibeInput').value || "vaporwave aesthetic favicon";
+    const btn = document.getElementById('btn');
+    const status = document.getElementById('status');
+    const loaders = document.querySelectorAll('.loading-text');
+    const images = document.querySelectorAll('img');
 
-        function update() {
-            console.log("Generating for:", aiPrompt);
-            // Add your generation logic here
-            alert("System engaging: " + (aiPrompt || "Default Vibe"));
-        }
+    // YOUR API KEY (Replace this!)
+    const HF_TOKEN = "your_huggingface_token_here"; 
+
+    // UI Setup
+    btn.disabled = true;
+    btn.innerText = "GENERATING...";
+    status.innerText = "// SYSTEM_STATUS: COMMUNICATING_WITH_API";
+    images.forEach(img => img.style.display = 'none');
+    loaders.forEach(l => l.style.display = 'block');
+
+    try {
+        const response = await fetch(
+            "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large",
+            {
+                headers: { Authorization: `Bearer ${HF_TOKEN}` },
+                method: "POST",
+                body: JSON.stringify({ inputs: prompt }),
+            }
+        );
+
+        if (!response.ok) throw new Error("API Limit reached or Model Loading");
+
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+
+        // Update both previews
+        images.forEach(img => {
+            img.src = imageUrl;
+            img.onload = () => {
+                img.style.display = 'block';
+                loaders.forEach(l => l.style.display = 'none');
+            };
+        });
+
+        btn.disabled = false;
+        btn.innerText = "RUN_GENERATION";
+        status.innerText = "// SYSTEM_STATUS: ONLINE";
+
+    } catch (error) {
+        console.error(error);
+        status.innerText = "// ERROR: MODEL_INITIALIZING_TRY_AGAIN";
+        btn.disabled = false;
+        btn.innerText = "RETRY_GENERATION";
+    }
+}
     </script>
 
 </body>
